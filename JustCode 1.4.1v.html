@@ -1,0 +1,1907 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JustCode 1.4.1</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/clike/clike.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/htmlmixed/htmlmixed.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #1a1a1a;
+            color: #cccccc;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            background: #1a1a1a;
+            padding: 6px 12px;
+            border-bottom: 1px solid #333333;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header .title {
+            color: #cccccc;
+            font-size: 14px;
+            font-weight: normal;
+            letter-spacing: 0.5px;
+        }
+        .header .title span { color: #ff6b6b; font-weight: bold; }
+        .header .title .ver { color: #555555; font-size: 10px; margin-left: 4px; }
+        .header .settings-btn {
+            background: #333333;
+            color: #cccccc;
+            border: 1px solid #444444;
+            padding: 3px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: inherit;
+            border-radius: 0;
+        }
+        .header .settings-btn:hover { background: #444444; }
+        .toolbar {
+            background: #252525;
+            padding: 6px 10px;
+            border-bottom: 1px solid #333333;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .toolbar button {
+            background: #333333;
+            color: #cccccc;
+            border: 1px solid #444444;
+            padding: 4px 12px;
+            font-size: 13px;
+            cursor: pointer;
+            font-family: inherit;
+            border-radius: 0;
+        }
+        .toolbar button:hover { background: #444444; }
+        .toolbar button:active { background: #555555; }
+        .toolbar .separator {
+            width: 1px;
+            height: 24px;
+            background: #444444;
+            display: inline-block;
+        }
+        .toolbar .filename {
+            background: #333333;
+            color: #cccccc;
+            border: 1px solid #444444;
+            padding: 3px 8px;
+            font-size: 13px;
+            font-family: inherit;
+            border-radius: 0;
+            width: 140px;
+        }
+        .toolbar .filename:focus { outline: none; border-color: #666666; }
+        .toolbar select {
+            background: #333333;
+            color: #cccccc;
+            border: 1px solid #444444;
+            padding: 3px 8px;
+            font-size: 13px;
+            font-family: inherit;
+            border-radius: 0;
+            cursor: pointer;
+        }
+        .toolbar select:focus { outline: none; border-color: #666666; }
+        #editor { flex: 1; overflow: hidden; }
+        .CodeMirror {
+            background: #1a1a1a;
+            color: #cccccc;
+            height: 100%;
+        }
+        .CodeMirror-gutters {
+            background: #252525;
+            border-right: 1px solid #333333;
+        }
+        .CodeMirror-linenumber { color: #666666; }
+        .cm-keyword { color: #c678dd; }
+        .cm-atom { color: #d19a66; }
+        .cm-number { color: #d19a66; }
+        .cm-def { color: #61afef; }
+        .cm-variable { color: #e06c75; }
+        .cm-variable-2 { color: #61afef; }
+        .cm-variable-3 { color: #e5c07b; }
+        .cm-property { color: #e06c75; }
+        .cm-operator { color: #56b6c2; }
+        .cm-comment { color: #5c6370; font-style: italic; }
+        .cm-string { color: #98c379; }
+        .cm-string-2 { color: #98c379; }
+        .cm-meta { color: #abb2bf; }
+        .cm-qualifier { color: #e5c07b; }
+        .cm-builtin { color: #e5c07b; }
+        .cm-bracket { color: #abb2bf; }
+        .cm-tag { color: #e06c75; }
+        .cm-attribute { color: #d19a66; }
+        .cm-hr { color: #abb2bf; }
+        .cm-link { color: #61afef; }
+        .cm-error {
+            color: #ff0000;
+            background: #3e1f1f;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+        .cm-error-line { background: #3e1f1f !important; }
+        .status {
+            background: #252525;
+            padding: 3px 10px;
+            border-top: 1px solid #333333;
+            font-size: 12px;
+            color: #888888;
+            display: flex;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .status .error-count { color: #ff0000; }
+        .status .error-count.zero { color: #98c379; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: #252525;
+            border: 1px solid #444444;
+            padding: 20px 30px;
+            min-width: 280px;
+            max-width: 400px;
+        }
+        .modal-content h3 {
+            color: #cccccc;
+            font-weight: normal;
+            font-size: 16px;
+            margin-bottom: 16px;
+            letter-spacing: 0.5px;
+        }
+        .modal-content .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #333333;
+        }
+        .modal-content .setting-item:last-child { border-bottom: none; }
+        .modal-content .setting-item label {
+            color: #cccccc;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .modal-content .setting-item input[type="checkbox"] {
+            appearance: none;
+            width: 36px;
+            height: 20px;
+            background: #333333;
+            border: 1px solid #444444;
+            cursor: pointer;
+            position: relative;
+            border-radius: 0;
+            flex-shrink: 0;
+        }
+        .modal-content .setting-item input[type="checkbox"]:checked { background: #ff6b6b; }
+        .modal-content .setting-item input[type="checkbox"]::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 14px;
+            height: 14px;
+            background: #cccccc;
+            transition: none;
+        }
+        .modal-content .setting-item input[type="checkbox"]:checked::after {
+            left: 18px;
+            background: #ffffff;
+        }
+        .modal-content .close-btn {
+            margin-top: 16px;
+            background: #333333;
+            color: #cccccc;
+            border: 1px solid #444444;
+            padding: 4px 16px;
+            font-size: 13px;
+            cursor: pointer;
+            font-family: inherit;
+            border-radius: 0;
+            width: 100%;
+        }
+        .modal-content .close-btn:hover { background: #444444; }
+        .modal-content .settings-info {
+            color: #666666;
+            font-size: 11px;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .file-panel {
+            background: #1a1a1a;
+            border-right: 1px solid #333333;
+            width: 240px;
+            flex-shrink: 0;
+            overflow-y: auto;
+            padding: 8px 0;
+            display: none;
+            flex-direction: column;
+        }
+        .file-panel.active { display: flex; }
+        .file-panel .file-item {
+            padding: 3px 12px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #aaaaaa;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-left: 2px solid transparent;
+            padding-left: calc(12px + 16px * var(--depth, 0));
+        }
+        .file-panel .file-item:hover {
+            background: #252525;
+            color: #cccccc;
+        }
+        .file-panel .file-item.active {
+            color: #ffffff;
+            border-left-color: #ff6b6b;
+            background: #252525;
+        }
+        .file-panel .file-item .icon { color: #666666; font-size: 14px; }
+        .file-panel .file-item .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .file-panel .file-item .del {
+            color: #555555;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 0 4px;
+        }
+        .file-panel .file-item .del:hover { color: #ff6b6b; }
+        .file-panel .file-item.folder .icon { color: #d19a66; }
+        .file-panel .file-item.folder .name { color: #d19a66; }
+        .file-panel .file-item.java .icon { color: #c678dd; }
+        .file-panel .file-item.java .name { color: #61afef; }
+        .file-panel .file-item.html .icon { color: #e06c75; }
+        .file-panel .file-item.html .name { color: #e06c75; }
+        .file-panel .file-item.css .icon { color: #56b6c2; }
+        .file-panel .file-item.css .name { color: #56b6c2; }
+        .file-panel .file-item.js .icon { color: #d19a66; }
+        .file-panel .file-item.js .name { color: #d19a66; }
+        .file-panel .add-btn {
+            margin: 6px 12px;
+            padding: 4px;
+            background: #252525;
+            border: 1px dashed #444444;
+            color: #888888;
+            text-align: center;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 0;
+            font-family: inherit;
+        }
+        .file-panel .add-btn:hover {
+            background: #333333;
+            color: #cccccc;
+        }
+        .file-panel .add-menu {
+            display: none;
+            flex-direction: column;
+            gap: 2px;
+            margin: 0 12px 6px;
+        }
+        .file-panel .add-menu.active { display: flex; }
+        .file-panel .add-menu input {
+            background: #252525;
+            border: 1px solid #444444;
+            color: #cccccc;
+            padding: 4px 8px;
+            font-size: 12px;
+            font-family: inherit;
+            border-radius: 0;
+        }
+        .file-panel .add-menu input:focus { outline: none; border-color: #666666; }
+        .file-panel .add-menu .btn-row {
+            display: flex;
+            gap: 4px;
+        }
+        .file-panel .add-menu .btn-row button {
+            flex: 1;
+            background: #333333;
+            border: 1px solid #444444;
+            color: #cccccc;
+            padding: 3px;
+            font-size: 11px;
+            cursor: pointer;
+            font-family: inherit;
+            border-radius: 0;
+        }
+        .file-panel .add-menu .btn-row button:hover { background: #444444; }
+        .main-area { display: flex; flex: 1; overflow: hidden; }
+
+        .project-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .project-modal.active { display: flex; }
+        .project-modal .modal-content {
+            background: #1a1a1a;
+            border: 1px solid #333333;
+            padding: 24px 32px;
+            min-width: 320px;
+            max-width: 450px;
+        }
+        .project-modal .modal-content h2 {
+            color: #cccccc;
+            font-size: 18px;
+            font-weight: normal;
+            margin-bottom: 16px;
+            letter-spacing: 0.5px;
+        }
+        .project-modal .modal-content h2 span { color: #ff6b6b; }
+        .project-modal .project-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 12px;
+        }
+        .project-modal .project-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 8px;
+            border-bottom: 1px solid #2a2a2a;
+            cursor: pointer;
+            transition: none;
+        }
+        .project-modal .project-item:hover { background: #252525; }
+        .project-modal .project-item .pname { color: #cccccc; font-size: 13px; }
+        .project-modal .project-item .pdel {
+            color: #555555;
+            cursor: pointer;
+            font-size: 13px;
+            padding: 0 4px;
+        }
+        .project-modal .project-item .pdel:hover { color: #ff6b6b; }
+        .project-modal .project-item .pactive {
+            color: #ff6b6b;
+            font-size: 11px;
+            margin-right: 8px;
+        }
+        .project-modal .project-item .pinfo {
+            color: #555555;
+            font-size: 10px;
+        }
+        .project-modal .new-project {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .project-modal .new-project input {
+            flex: 1;
+            background: #252525;
+            border: 1px solid #333333;
+            color: #cccccc;
+            padding: 4px 8px;
+            font-size: 13px;
+            font-family: inherit;
+            border-radius: 0;
+        }
+        .project-modal .new-project input:focus { outline: none; border-color: #666666; }
+        .project-modal .new-project button {
+            background: #333333;
+            border: 1px solid #444444;
+            color: #cccccc;
+            padding: 4px 12px;
+            font-size: 13px;
+            cursor: pointer;
+            font-family: inherit;
+            border-radius: 0;
+        }
+        .project-modal .new-project button:hover { background: #444444; }
+        .project-modal .close-project-btn {
+            margin-top: 12px;
+            background: #252525;
+            border: 1px solid #333333;
+            color: #666666;
+            padding: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: inherit;
+            border-radius: 0;
+            width: 100%;
+        }
+        .project-modal .close-project-btn:hover { background: #333333; color: #cccccc; }
+
+        .project-version {
+            color: #555555;
+            font-size: 10px;
+        }
+
+        .lang-selector {
+            background: #333333;
+            color: #cccccc;
+            border: 1px solid #444444;
+            padding: 3px 8px;
+            font-size: 13px;
+            font-family: inherit;
+            border-radius: 0;
+            cursor: pointer;
+        }
+        .lang-selector:focus { outline: none; border-color: #666666; }
+
+        #toast-container {
+            position: fixed;
+            bottom: 40px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 5000;
+            pointer-events: none;
+        }
+        .toast {
+            background: #2a2a2a;
+            color: #eaeaea;
+            border: 1px solid #444444;
+            border-left: 3px solid #61afef;
+            padding: 10px 16px;
+            font-size: 13px;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            min-width: 220px;
+            max-width: 380px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            pointer-events: auto;
+            opacity: 0;
+            transform: translateX(20px);
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        .toast.error { border-left-color: #ff6b6b; }
+        .toast.success { border-left-color: #98c379; }
+        .toast.warning { border-left-color: #e5c07b; }
+
+        #confirm-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 4000;
+            justify-content: center;
+            align-items: center;
+        }
+        #confirm-overlay.active { display: flex; }
+        #confirm-box {
+            background: #252525;
+            border: 1px solid #444444;
+            padding: 20px 24px;
+            min-width: 280px;
+            max-width: 400px;
+        }
+        #confirm-box .confirm-msg {
+            color: #cccccc;
+            font-size: 14px;
+            margin-bottom: 16px;
+            line-height: 1.4;
+            white-space: pre-line;
+        }
+        #confirm-box .confirm-btns {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+        #confirm-box .confirm-btns button {
+            background: #333333;
+            color: #cccccc;
+            border: 1px solid #444444;
+            padding: 4px 16px;
+            font-size: 13px;
+            cursor: pointer;
+            font-family: inherit;
+            border-radius: 0;
+        }
+        #confirm-box .confirm-btns button:hover { background: #444444; }
+        #confirm-box .confirm-btns .danger { background: #ff6b6b; color: #ffffff; border-color: #ff6b6b; }
+        #confirm-box .confirm-btns .danger:hover { background: #ff5252; }
+
+        body.light {
+            background: #ffffff;
+            color: #333333;
+        }
+        body.light .header {
+            background: #f5f5f5;
+            border-bottom-color: #dddddd;
+        }
+        body.light .header .title { color: #333333; }
+        body.light .header .title .ver { color: #999999; }
+        body.light .header .settings-btn {
+            background: #e8e8e8;
+            color: #333333;
+            border-color: #cccccc;
+        }
+        body.light .header .settings-btn:hover { background: #dddddd; }
+        body.light .toolbar {
+            background: #eeeeee;
+            border-bottom-color: #dddddd;
+        }
+        body.light .toolbar button {
+            background: #e0e0e0;
+            color: #333333;
+            border-color: #cccccc;
+        }
+        body.light .toolbar button:hover { background: #d5d5d5; }
+        body.light .toolbar button:active { background: #cacaca; }
+        body.light .toolbar .separator { background: #cccccc; }
+        body.light .toolbar .filename {
+            background: #ffffff;
+            color: #333333;
+            border-color: #cccccc;
+        }
+        body.light .toolbar .filename:focus { border-color: #888888; }
+        body.light .toolbar select,
+        body.light .lang-selector {
+            background: #ffffff;
+            color: #333333;
+            border-color: #cccccc;
+        }
+        body.light .CodeMirror {
+            background: #ffffff;
+            color: #333333;
+        }
+        body.light .CodeMirror-gutters {
+            background: #f0f0f0;
+            border-right-color: #dddddd;
+        }
+        body.light .CodeMirror-linenumber { color: #aaaaaa; }
+        body.light .cm-keyword { color: #a626a4; }
+        body.light .cm-atom { color: #986801; }
+        body.light .cm-number { color: #986801; }
+        body.light .cm-def { color: #4078f2; }
+        body.light .cm-variable { color: #e45649; }
+        body.light .cm-variable-2 { color: #4078f2; }
+        body.light .cm-variable-3 { color: #c18401; }
+        body.light .cm-property { color: #e45649; }
+        body.light .cm-operator { color: #0184bc; }
+        body.light .cm-comment { color: #a0a1a7; font-style: italic; }
+        body.light .cm-string { color: #50a14f; }
+        body.light .cm-string-2 { color: #50a14f; }
+        body.light .cm-meta { color: #383a42; }
+        body.light .cm-qualifier { color: #c18401; }
+        body.light .cm-builtin { color: #c18401; }
+        body.light .cm-bracket { color: #383a42; }
+        body.light .cm-tag { color: #e45649; }
+        body.light .cm-attribute { color: #986801; }
+        body.light .cm-hr { color: #383a42; }
+        body.light .cm-link { color: #4078f2; }
+        body.light .cm-error {
+            color: #ffffff;
+            background: #e45649;
+        }
+        body.light .cm-error-line { background: #ffe5e5 !important; }
+        body.light .status {
+            background: #eeeeee;
+            border-top-color: #dddddd;
+            color: #777777;
+        }
+        body.light .status .error-count { color: #d63031; }
+        body.light .status .error-count.zero { color: #27ae60; }
+        body.light .modal-content {
+            background: #ffffff;
+            border-color: #dddddd;
+        }
+        body.light .modal-content h3 { color: #333333; }
+        body.light .modal-content .setting-item { border-bottom-color: #eeeeee; }
+        body.light .modal-content .setting-item label { color: #333333; }
+        body.light .modal-content .setting-item input[type="checkbox"] {
+            background: #dddddd;
+            border-color: #cccccc;
+        }
+        body.light .modal-content .setting-item input[type="checkbox"]::after {
+            background: #ffffff;
+        }
+        body.light .modal-content .close-btn {
+            background: #e8e8e8;
+            color: #333333;
+            border-color: #cccccc;
+        }
+        body.light .modal-content .close-btn:hover { background: #dddddd; }
+        body.light .modal-content .settings-info { color: #999999; }
+        body.light .file-panel {
+            background: #fafafa;
+            border-right-color: #dddddd;
+        }
+        body.light .file-panel .file-item {
+            color: #555555;
+        }
+        body.light .file-panel .file-item:hover {
+            background: #eeeeee;
+            color: #222222;
+        }
+        body.light .file-panel .file-item.active {
+            color: #000000;
+            background: #eeeeee;
+        }
+        body.light .file-panel .file-item .icon { color: #999999; }
+        body.light .file-panel .file-item .del { color: #bbbbbb; }
+        body.light .file-panel .add-btn {
+            background: #f0f0f0;
+            border-color: #cccccc;
+            color: #777777;
+        }
+        body.light .file-panel .add-btn:hover {
+            background: #e5e5e5;
+            color: #333333;
+        }
+        body.light .file-panel .add-menu input {
+            background: #ffffff;
+            border-color: #cccccc;
+            color: #333333;
+        }
+        body.light .file-panel .add-menu .btn-row button {
+            background: #e8e8e8;
+            color: #333333;
+            border-color: #cccccc;
+        }
+        body.light .file-panel .add-menu .btn-row button:hover { background: #dddddd; }
+        body.light .project-modal .modal-content {
+            background: #ffffff;
+            border-color: #dddddd;
+        }
+        body.light .project-modal .modal-content h2 { color: #333333; }
+        body.light .project-modal .project-item {
+            border-bottom-color: #eeeeee;
+        }
+        body.light .project-modal .project-item:hover { background: #f5f5f5; }
+        body.light .project-modal .project-item .pname { color: #333333; }
+        body.light .project-modal .project-item .pdel { color: #bbbbbb; }
+        body.light .project-modal .new-project input {
+            background: #ffffff;
+            border-color: #cccccc;
+            color: #333333;
+        }
+        body.light .project-modal .new-project button {
+            background: #e8e8e8;
+            color: #333333;
+            border-color: #cccccc;
+        }
+        body.light .project-modal .new-project button:hover { background: #dddddd; }
+        body.light .project-modal .close-project-btn {
+            background: #f0f0f0;
+            border-color: #dddddd;
+            color: #888888;
+        }
+        body.light .project-modal .close-project-btn:hover {
+            background: #e5e5e5;
+            color: #333333;
+        }
+        body.light .toast {
+            background: #ffffff;
+            color: #333333;
+            border-color: #dddddd;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        body.light #confirm-box {
+            background: #ffffff;
+            border-color: #dddddd;
+        }
+        body.light #confirm-box .confirm-msg { color: #333333; }
+        body.light #confirm-box .confirm-btns button {
+            background: #e8e8e8;
+            color: #333333;
+            border-color: #cccccc;
+        }
+        body.light #confirm-box .confirm-btns button:hover { background: #dddddd; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="title"><span>J</span>ust<span>C</span>ode <span class="ver" id="appVersionLabel">v1.4.1</span></div>
+    <button class="settings-btn" id="settingsBtn">Настройки</button>
+</div>
+
+<div class="toolbar">
+    <button id="btnProjects">Проекты</button>
+    <div class="separator"></div>
+    <button id="btnClear">Очистить всё</button>
+    <button id="btnUndo">Назад</button>
+    <div class="separator"></div>
+    <button id="btnDownload">Скачать файл</button>
+    <button id="btnDownloadZip">Скачать ZIP</button>
+    <input type="text" class="filename" id="fileName" value="Main.java">
+    <div class="separator"></div>
+    <select id="langSelector" class="lang-selector">
+        <option value="java">Java</option>
+        <option value="html">HTML</option>
+        <option value="css">CSS</option>
+        <option value="javascript">JavaScript</option>
+        <option value="xml">XML</option>
+        <option value="text">Обычный текст</option>
+    </select>
+    <div class="separator"></div>
+    <button id="btnCheck">Проверить ошибки</button>
+    <button id="btnToggleFiles">Файлы</button>
+</div>
+
+<div class="main-area">
+    <div class="file-panel" id="filePanel">
+        <div id="fileList"></div>
+        <div class="add-btn" id="addBtn">+ Добавить</div>
+        <div class="add-menu" id="addMenu">
+            <input type="text" id="newFileName" placeholder="Путь/Имя (src/Test.java)">
+            <div class="btn-row">
+                <button id="addFileBtn">Файл</button>
+                <button id="addFolderBtn">Папку</button>
+            </div>
+        </div>
+    </div>
+    <div id="editor"></div>
+</div>
+
+<div class="status">
+    <span id="langDisplay">Java 17</span>
+    <span id="cursorPos">Строка 1, Позиция 1</span>
+    <span id="charCount">Символов: 0</span>
+    <span id="errorCount" class="error-count zero">Ошибок: 0</span>
+    <span id="projectInfo" class="project-version"></span>
+</div>
+
+<div class="modal" id="settingsModal">
+    <div class="modal-content">
+        <h3>Настройки</h3>
+        <div class="setting-item">
+            <label for="highlightToggle">Подсвечивать код</label>
+            <input type="checkbox" id="highlightToggle" checked>
+        </div>
+        <div class="setting-item">
+            <label for="fullscreenToggle">Полноэкранный режим</label>
+            <input type="checkbox" id="fullscreenToggle">
+        </div>
+        <div class="setting-item">
+            <label for="themeToggle">Светлая тема</label>
+            <input type="checkbox" id="themeToggle">
+        </div>
+        <button class="close-btn" id="closeSettings">Закрыть</button>
+        <div class="settings-info">Настройки сохраняются автоматически</div>
+    </div>
+</div>
+
+<div class="project-modal" id="projectModal">
+    <div class="modal-content">
+        <h2><span>J</span>ust<span>C</span>ode — Проекты</h2>
+        <div class="project-list" id="projectList"></div>
+        <div class="new-project">
+            <input type="text" id="newProjectName" placeholder="Название проекта">
+            <button id="createProjectBtn">Создать</button>
+        </div>
+        <button class="close-project-btn" id="closeProjectModal">Закрыть</button>
+    </div>
+</div>
+
+<div id="toast-container"></div>
+
+<div id="confirm-overlay">
+    <div id="confirm-box">
+        <div class="confirm-msg" id="confirmMsg"></div>
+        <div class="confirm-btns">
+            <button id="confirmCancel">Отмена</button>
+            <button id="confirmOk" class="danger">OK</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const APP_VERSION = '1.4.1';
+    document.getElementById('appVersionLabel').textContent = 'v' + APP_VERSION;
+
+    function showToast(message, type = 'info', duration = 3000) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = 'toast ' + type;
+        toast.textContent = message;
+        container.appendChild(toast);
+        void toast.offsetWidth;
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => {
+                if (toast.parentNode) toast.parentNode.removeChild(toast);
+            }, 220);
+        }, duration);
+    }
+
+    let confirmResolver = null;
+    function showConfirm(message, okText = 'OK', cancelText = 'Отмена') {
+        return new Promise((resolve) => {
+            const overlay = document.getElementById('confirm-overlay');
+            document.getElementById('confirmMsg').textContent = message;
+            document.getElementById('confirmOk').textContent = okText;
+            document.getElementById('confirmCancel').textContent = cancelText;
+            overlay.classList.add('active');
+            confirmResolver = resolve;
+        });
+    }
+    document.getElementById('confirmOk').addEventListener('click', () => {
+        document.getElementById('confirm-overlay').classList.remove('active');
+        if (confirmResolver) { confirmResolver(true); confirmResolver = null; }
+    });
+    document.getElementById('confirmCancel').addEventListener('click', () => {
+        document.getElementById('confirm-overlay').classList.remove('active');
+        if (confirmResolver) { confirmResolver(false); confirmResolver = null; }
+    });
+    document.getElementById('confirm-overlay').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) {
+            e.currentTarget.classList.remove('active');
+            if (confirmResolver) { confirmResolver(false); confirmResolver = null; }
+        }
+    });
+
+    const editor = CodeMirror(document.getElementById('editor'), {
+        mode: 'text/x-java',
+        theme: 'default',
+        lineNumbers: true,
+        indentUnit: 4,
+        tabSize: 4,
+        autofocus: true,
+        matchBrackets: true,
+        autoCloseBrackets: true
+    });
+
+    const SETTINGS_KEY = 'justcode_settings';
+    let settings = { highlight: true, fullscreen: false, theme: 'dark' };
+
+    const LANG_MODES = {
+        'java': 'text/x-java',
+        'html': 'htmlmixed',
+        'css': 'css',
+        'javascript': 'javascript',
+        'xml': 'xml',
+        'text': null
+    };
+    const LANG_NAMES = {
+        'java': 'Java',
+        'html': 'HTML5',
+        'css': 'CSS3',
+        'javascript': 'JavaScript',
+        'xml': 'XML',
+        'text': 'Текст'
+    };
+    const LANG_EXTS = {
+        'java': 'java',
+        'html': 'html',
+        'css': 'css',
+        'javascript': 'js',
+        'xml': 'xml',
+        'text': 'txt'
+    };
+
+    function getModeFromExtension(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        switch (ext) {
+            case 'java': return 'text/x-java';
+            case 'html': case 'htm': return 'htmlmixed';
+            case 'css': return 'css';
+            case 'js': return 'javascript';
+            case 'xml': return 'xml';
+            default: return null;
+        }
+    }
+    function getLangFromExtension(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        switch (ext) {
+            case 'java': return 'java';
+            case 'html': case 'htm': return 'html';
+            case 'css': return 'css';
+            case 'js': return 'javascript';
+            case 'xml': return 'xml';
+            default: return 'text';
+        }
+    }
+    function getDefaultTemplate(lang) {
+        switch (lang) {
+            case 'java':
+                return 'public class Main {\n    public static void main(String[] args) {\n        \n    }\n}';
+            case 'html':
+                return '<!DOCTYPE html>\n<html>\n<head>\n    <meta charset="UTF-8">\n    <title>Моя страница</title>\n</head>\n<body>\n    \n</body>\n</html>';
+            case 'css':
+                return '/* Стили */\nbody {\n    background: #1a1a1a;\n    color: #ffffff;\n}';
+            case 'javascript':
+                return '// JavaScript код\nconsole.log("Привет, мир!");';
+            case 'xml':
+                return '<?xml version="1.0" encoding="UTF-8"?>\n<root>\n    \n</root>';
+            default:
+                return '';
+        }
+    }
+    function changeLanguage(lang) {
+        const mode = LANG_MODES[lang];
+        editor.setOption('mode', mode);
+        document.getElementById('langDisplay').textContent = LANG_NAMES[lang] || 'Текст';
+    }
+
+    function loadSettings() {
+        try {
+            const saved = localStorage.getItem(SETTINGS_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                settings = { ...settings, ...parsed };
+            }
+        } catch (e) {}
+        applySettings();
+    }
+    function saveSettings() {
+        try {
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+        } catch (e) {}
+    }
+    function applySettings() {
+        document.getElementById('highlightToggle').checked = settings.highlight;
+        if (!settings.highlight) {
+            editor.setOption('mode', null);
+        } else {
+            const lang = document.getElementById('langSelector').value;
+            editor.setOption('mode', LANG_MODES[lang]);
+        }
+        document.getElementById('fullscreenToggle').checked = settings.fullscreen;
+        if (settings.fullscreen) requestFullscreen();
+        else exitFullscreen();
+
+        document.getElementById('themeToggle').checked = settings.theme === 'light';
+        if (settings.theme === 'light') {
+            document.body.classList.add('light');
+        } else {
+            document.body.classList.remove('light');
+        }
+    }
+
+    function requestFullscreen() {
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) elem.requestFullscreen().catch(() => {});
+        else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+        else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+    }
+    function exitFullscreen() {
+        if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
+            if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+            else if (document.msExitFullscreen) document.msExitFullscreen();
+        }
+    }
+    document.addEventListener('fullscreenchange', function() {
+        const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+        if (!isFullscreen && settings.fullscreen) {
+            settings.fullscreen = false;
+            document.getElementById('fullscreenToggle').checked = false;
+            saveSettings();
+        }
+    });
+
+    setInterval(function() {
+        settings.highlight = document.getElementById('highlightToggle').checked;
+        settings.fullscreen = document.getElementById('fullscreenToggle').checked;
+        saveSettings();
+    }, 20000);
+
+    document.getElementById('highlightToggle').addEventListener('change', function() {
+        settings.highlight = this.checked;
+        const lang = document.getElementById('langSelector').value;
+        editor.setOption('mode', settings.highlight ? LANG_MODES[lang] : null);
+        saveSettings();
+    });
+
+    document.getElementById('fullscreenToggle').addEventListener('change', function() {
+        settings.fullscreen = this.checked;
+        if (settings.fullscreen) requestFullscreen();
+        else exitFullscreen();
+        saveSettings();
+    });
+
+    document.getElementById('themeToggle').addEventListener('change', function() {
+        settings.theme = this.checked ? 'light' : 'dark';
+        if (settings.theme === 'light') {
+            document.body.classList.add('light');
+        } else {
+            document.body.classList.remove('light');
+        }
+        saveSettings();
+    });
+
+    document.getElementById('settingsBtn').addEventListener('click', function() {
+        document.getElementById('settingsModal').classList.add('active');
+        document.getElementById('highlightToggle').checked = settings.highlight;
+        document.getElementById('fullscreenToggle').checked = settings.fullscreen;
+        document.getElementById('themeToggle').checked = settings.theme === 'light';
+    });
+
+    document.getElementById('closeSettings').addEventListener('click', function() {
+        document.getElementById('settingsModal').classList.remove('active');
+        saveSettings();
+    });
+    document.getElementById('settingsModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.classList.remove('active');
+            saveSettings();
+        }
+    });
+
+    const PROJECTS_KEY = 'justcode_projects';
+    const CURRENT_PROJECT_KEY = 'justcode_current_project';
+
+    let projects = {};
+    let currentProject = null;
+    let currentFile = 'Main.java';
+
+    function loadProjects() {
+        try {
+            const saved = localStorage.getItem(PROJECTS_KEY);
+            if (saved) projects = JSON.parse(saved);
+        } catch (e) {}
+        try {
+            currentProject = localStorage.getItem(CURRENT_PROJECT_KEY);
+        } catch (e) {}
+
+        if (Object.keys(projects).length === 0) {
+            projects['default'] = {
+                version: APP_VERSION,
+                files: {
+                    'Main.java': 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello World");\n    }\n}'
+                }
+            };
+            currentProject = 'default';
+            saveProjects();
+        }
+        if (!currentProject || !projects[currentProject]) {
+            currentProject = Object.keys(projects)[0];
+            saveProjects();
+        }
+    }
+    function saveProjects() {
+        try {
+            localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
+            localStorage.setItem(CURRENT_PROJECT_KEY, currentProject);
+        } catch (e) {}
+    }
+    function getProjectFiles() {
+        return projects[currentProject]?.files || {};
+    }
+    function getProjectVersion() {
+        return projects[currentProject]?.version || APP_VERSION;
+    }
+    function getFileContent(path) {
+        return getProjectFiles()[path] || '';
+    }
+    function setFileContent(path, content) {
+        if (projects[currentProject]) {
+            projects[currentProject].files[path] = content;
+            saveProjects();
+        }
+    }
+    function deleteFile(path) {
+        if (projects[currentProject]) {
+            delete projects[currentProject].files[path];
+            saveProjects();
+        }
+    }
+    function addFileToProject(path, content = null) {
+        const files = getProjectFiles();
+        if (files[path]) return false;
+        if (content === null) {
+            const lang = getLangFromExtension(path);
+            content = getDefaultTemplate(lang);
+        }
+        setFileContent(path, content);
+        return true;
+    }
+    function addFolderToProject(path) {
+        const folderPath = path.endsWith('/') ? path : path + '/';
+        const files = getProjectFiles();
+        if (files[folderPath] !== undefined) return false;
+        setFileContent(folderPath, null);
+        return true;
+    }
+    function getFileTree() {
+        const files = getProjectFiles();
+        const paths = Object.keys(files);
+        return paths.sort((a, b) => {
+            const aIsFolder = a.endsWith('/');
+            const bIsFolder = b.endsWith('/');
+            if (aIsFolder && !bIsFolder) return -1;
+            if (!aIsFolder && bIsFolder) return 1;
+            return a.localeCompare(b);
+        });
+    }
+    function getDisplayName(path) {
+        const parts = path.split('/');
+        if (path.endsWith('/')) return parts[parts.length - 2] + '/';
+        return parts[parts.length - 1];
+    }
+    function getFileClass(path) {
+        if (path.endsWith('/')) return 'folder';
+        const ext = path.split('.').pop().toLowerCase();
+        switch (ext) {
+            case 'java': return 'java';
+            case 'html': case 'htm': return 'html';
+            case 'css': return 'css';
+            case 'js': return 'js';
+            case 'xml': return 'xml';
+            default: return '';
+        }
+    }
+    function getFileIcon(path) {
+        if (path.endsWith('/')) return 'D';
+        const ext = path.split('.').pop().toLowerCase();
+        switch (ext) {
+            case 'java': return 'J';
+            case 'html': case 'htm': return 'H';
+            case 'css': return 'C';
+            case 'js': return 'S';
+            case 'xml': return 'X';
+            default: return 'F';
+        }
+    }
+
+    function renderFileList() {
+        const list = document.getElementById('fileList');
+        list.innerHTML = '';
+        const paths = getFileTree();
+
+        let activeFile = currentFile;
+        if (!getFileContent(activeFile) && getFileContent(activeFile) !== null) {
+            activeFile = paths.find(p => !p.endsWith('/')) || null;
+        }
+
+        const renderPath = (path, depth = 0) => {
+            const div = document.createElement('div');
+            const isFolderPath = path.endsWith('/');
+            const fileClass = getFileClass(path);
+
+            div.className = `file-item${isFolderPath ? ' folder' : ''}${fileClass ? ' ' + fileClass : ''}${path === activeFile ? ' active' : ''}`;
+            div.style.setProperty('--depth', depth);
+
+            const icon = getFileIcon(path);
+            const name = getDisplayName(path);
+
+            div.innerHTML = `
+                <span class="icon">${icon}</span>
+                <span class="name">${name}</span>
+                <span class="del" data-path="${path}">X</span>
+            `;
+
+            div.addEventListener('click', function(e) {
+                if (e.target.classList.contains('del')) return;
+                if (isFolderPath) return;
+                currentFile = path;
+                const content = getFileContent(path);
+                editor.setValue(content);
+                document.getElementById('fileName').value = path;
+                const lang = getLangFromExtension(path);
+                document.getElementById('langSelector').value = lang;
+                changeLanguage(lang);
+                renderFileList();
+                saveProjects();
+            });
+
+            const del = div.querySelector('.del');
+            del.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const p = this.dataset.path;
+                if (p === currentFile) {
+                    const keys = getFileTree();
+                    const next = keys.find(k => !k.endsWith('/') && k !== p) || null;
+                    if (next) {
+                        currentFile = next;
+                        editor.setValue(getFileContent(next));
+                        document.getElementById('fileName').value = next;
+                        const lang = getLangFromExtension(next);
+                        document.getElementById('langSelector').value = lang;
+                        changeLanguage(lang);
+                    } else {
+                        currentFile = null;
+                        editor.setValue('');
+                        document.getElementById('fileName').value = '';
+                    }
+                }
+                deleteFile(p);
+                renderFileList();
+                saveProjects();
+            });
+
+            list.appendChild(div);
+
+            const childPaths = paths.filter(p => p.startsWith(path) && p !== path);
+            if (childPaths.length > 0) {
+                const children = childPaths.filter(p => {
+                    const remaining = p.substring(path.length);
+                    return !remaining.includes('/') || remaining.indexOf('/') === remaining.lastIndexOf('/');
+                });
+                for (const child of children) {
+                    renderPath(child, depth + 1);
+                }
+            }
+        };
+
+        const rootPaths = paths.filter(p => !p.includes('/'));
+        const rootFolders = paths.filter(p => p.includes('/') && p.startsWith(''));
+        const uniqueRoots = [];
+        const seen = new Set();
+        for (const p of rootPaths) {
+            if (!seen.has(p)) { seen.add(p); uniqueRoots.push(p); }
+        }
+        for (const p of rootFolders) {
+            const root = p.split('/')[0] + '/';
+            if (!seen.has(root)) { seen.add(root); uniqueRoots.push(root); }
+        }
+        for (const p of uniqueRoots) {
+            renderPath(p, 0);
+        }
+        const orphanFiles = paths.filter(p => !p.includes('/') && !p.endsWith('/'));
+        for (const p of orphanFiles) {
+            if (!seen.has(p)) renderPath(p, 0);
+        }
+
+        if (currentFile && getFileContent(currentFile)) {
+            const content = getFileContent(currentFile);
+            editor.setValue(content);
+            document.getElementById('fileName').value = currentFile;
+            const lang = getLangFromExtension(currentFile);
+            document.getElementById('langSelector').value = lang;
+            changeLanguage(lang);
+        }
+        updateProjectInfo();
+    }
+
+    function updateProjectInfo() {
+        const info = document.getElementById('projectInfo');
+        if (currentProject) {
+            const version = getProjectVersion();
+            info.textContent = 'Проект: ' + currentProject + ' | Версия: ' + version;
+        } else {
+            info.textContent = '';
+        }
+    }
+
+    function renderProjectList() {
+        const list = document.getElementById('projectList');
+        list.innerHTML = '';
+        const names = Object.keys(projects);
+        for (const name of names) {
+            const div = document.createElement('div');
+            div.className = 'project-item';
+            const filesCount = Object.keys(projects[name].files || {}).length;
+            const isActive = name === currentProject;
+            div.innerHTML = `
+                <div>
+                    <span class="${isActive ? 'pactive' : ''}">${isActive ? '>' : ''}</span>
+                    <span class="pname">${name}</span>
+                    <span class="pinfo"> | ${filesCount} файлов | v${projects[name].version || APP_VERSION}</span>
+                </div>
+                <span class="pdel" data-project="${name}">X</span>
+            `;
+            div.addEventListener('click', function(e) {
+                if (e.target.classList.contains('pdel')) return;
+                if (name !== currentProject) {
+                    currentProject = name;
+                    currentFile = Object.keys(getProjectFiles()).find(k => !k.endsWith('/')) || 'Main.java';
+                    if (!getFileContent(currentFile) && getFileContent(currentFile) !== null) {
+                        currentFile = null;
+                    }
+                    if (currentFile && getFileContent(currentFile)) {
+                        editor.setValue(getFileContent(currentFile));
+                        document.getElementById('fileName').value = currentFile;
+                        const lang = getLangFromExtension(currentFile);
+                        document.getElementById('langSelector').value = lang;
+                        changeLanguage(lang);
+                    } else {
+                        editor.setValue('');
+                        document.getElementById('fileName').value = '';
+                    }
+                    saveProjects();
+                    renderProjectList();
+                    renderFileList();
+                    updateProjectInfo();
+                }
+            });
+            const del = div.querySelector('.pdel');
+            del.addEventListener('click', async function(e) {
+                e.stopPropagation();
+                const proj = this.dataset.project;
+                const ok = await showConfirm('Удалить проект "' + proj + '"?', 'Удалить', 'Отмена');
+                if (!ok) return;
+                if (proj === currentProject) {
+                    const names2 = Object.keys(projects).filter(n => n !== proj);
+                    if (names2.length > 0) {
+                        currentProject = names2[0];
+                        const firstFile = Object.keys(getProjectFiles()).find(k => !k.endsWith('/')) || null;
+                        if (firstFile) {
+                            currentFile = firstFile;
+                            editor.setValue(getFileContent(firstFile));
+                            document.getElementById('fileName').value = firstFile;
+                            const lang = getLangFromExtension(firstFile);
+                            document.getElementById('langSelector').value = lang;
+                            changeLanguage(lang);
+                        }
+                    } else {
+                        currentProject = null;
+                        currentFile = null;
+                        editor.setValue('');
+                        document.getElementById('fileName').value = '';
+                    }
+                }
+                delete projects[proj];
+                if (Object.keys(projects).length === 0) {
+                    projects['default'] = {
+                        version: APP_VERSION,
+                        files: { 'Main.java': 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello World");\n    }\n}' }
+                    };
+                    currentProject = 'default';
+                    currentFile = 'Main.java';
+                    editor.setValue(projects['default'].files['Main.java']);
+                    document.getElementById('fileName').value = 'Main.java';
+                    document.getElementById('langSelector').value = 'java';
+                    changeLanguage('java');
+                }
+                saveProjects();
+                renderProjectList();
+                renderFileList();
+                updateProjectInfo();
+            });
+            list.appendChild(div);
+        }
+    }
+
+    document.getElementById('btnProjects').addEventListener('click', function() {
+        renderProjectList();
+        document.getElementById('projectModal').classList.add('active');
+    });
+    document.getElementById('closeProjectModal').addEventListener('click', function() {
+        document.getElementById('projectModal').classList.remove('active');
+    });
+    document.getElementById('projectModal').addEventListener('click', function(e) {
+        if (e.target === this) this.classList.remove('active');
+    });
+
+    document.getElementById('createProjectBtn').addEventListener('click', function() {
+        const name = document.getElementById('newProjectName').value.trim();
+        if (!name) return;
+        if (projects[name]) {
+            showToast('Проект с таким именем уже существует', 'error');
+            return;
+        }
+        projects[name] = {
+            version: APP_VERSION,
+            files: {
+                'Main.java': 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello World");\n    }\n}'
+            }
+        };
+        currentProject = name;
+        currentFile = 'Main.java';
+        editor.setValue(projects[name].files['Main.java']);
+        document.getElementById('fileName').value = 'Main.java';
+        document.getElementById('langSelector').value = 'java';
+        changeLanguage('java');
+        document.getElementById('newProjectName').value = '';
+        saveProjects();
+        renderProjectList();
+        renderFileList();
+        updateProjectInfo();
+        showToast('Проект "' + name + '" создан', 'success');
+    });
+    document.getElementById('newProjectName').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') document.getElementById('createProjectBtn').click();
+    });
+
+    document.getElementById('langSelector').addEventListener('change', function() {
+        const lang = this.value;
+        changeLanguage(lang);
+        const fileName = document.getElementById('fileName').value;
+        if (LANG_EXTS[lang]) {
+            const newName = fileName.replace(/\.[^.]+$/, '') + '.' + LANG_EXTS[lang];
+            document.getElementById('fileName').value = newName;
+        }
+        saveSettings();
+    });
+
+    document.getElementById('btnToggleFiles').addEventListener('click', function() {
+        document.getElementById('filePanel').classList.toggle('active');
+        this.textContent = document.getElementById('filePanel').classList.contains('active') ? 'Скрыть' : 'Файлы';
+    });
+
+    document.getElementById('addBtn').addEventListener('click', function() {
+        document.getElementById('addMenu').classList.toggle('active');
+        document.getElementById('newFileName').focus();
+    });
+
+    document.getElementById('addFileBtn').addEventListener('click', function() {
+        const name = document.getElementById('newFileName').value.trim();
+        if (!name) return;
+        if (addFileToProject(name)) {
+            document.getElementById('newFileName').value = '';
+            document.getElementById('addMenu').classList.remove('active');
+            renderFileList();
+            saveProjects();
+            const lang = getLangFromExtension(name);
+            document.getElementById('langSelector').value = lang;
+            changeLanguage(lang);
+            showToast('Файл "' + name + '" добавлен', 'success');
+        } else {
+            showToast('Файл с таким именем уже существует', 'error');
+        }
+    });
+
+    document.getElementById('addFolderBtn').addEventListener('click', function() {
+        const name = document.getElementById('newFileName').value.trim();
+        if (!name) return;
+        if (addFolderToProject(name)) {
+            document.getElementById('newFileName').value = '';
+            document.getElementById('addMenu').classList.remove('active');
+            renderFileList();
+            saveProjects();
+            showToast('Папка "' + name + '" добавлена', 'success');
+        } else {
+            showToast('Папка с таким именем уже существует', 'error');
+        }
+    });
+    document.getElementById('newFileName').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') document.getElementById('addFileBtn').click();
+    });
+
+    document.getElementById('btnClear').addEventListener('click', async function() {
+        const ok = await showConfirm('Очистить редактор?', 'Очистить', 'Отмена');
+        if (!ok) return;
+        if (currentFile && getFileContent(currentFile) !== null) {
+            setFileContent(currentFile, '');
+        }
+        editor.setValue('');
+        saveProjects();
+        showToast('Редактор очищен', 'info');
+    });
+
+    document.getElementById('btnUndo').addEventListener('click', function() {
+        editor.undo();
+    });
+
+    document.getElementById('btnDownload').addEventListener('click', function() {
+        const content = editor.getValue();
+        const fileName = document.getElementById('fileName').value.trim() || 'Main.java';
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+    });
+
+    document.getElementById('btnDownloadZip').addEventListener('click', function() {
+        const zip = new JSZip();
+        const root = zip.folder(currentProject || 'project');
+        const files = getProjectFiles();
+        for (const [path, content] of Object.entries(files)) {
+            if (content !== null) root.file(path, content);
+        }
+        zip.generateAsync({ type: 'blob' }).then(function(blob) {
+            saveAs(blob, (currentProject || 'project') + '.zip');
+        });
+    });
+
+    function stripStringsAndComments(code) {
+        let out = '';
+        let i = 0;
+        const n = code.length;
+
+        while (i < n) {
+            const ch = code[i];
+            const next = code[i + 1];
+            const next2 = code[i + 2];
+
+            if (ch === '/' && next === '/') {
+                while (i < n && code[i] !== '\n') { out += ' '; i++; }
+                continue;
+            }
+            if (ch === '/' && next === '*') {
+                out += '  '; i += 2;
+                while (i < n && !(code[i] === '*' && code[i + 1] === '/')) {
+                    out += code[i] === '\n' ? '\n' : ' ';
+                    i++;
+                }
+                if (i < n) { out += '  '; i += 2; }
+                continue;
+            }
+            if (ch === '"' && next === '"' && next2 === '"') {
+                out += '   '; i += 3;
+                while (i < n && !(code[i] === '"' && code[i + 1] === '"' && code[i + 2] === '"')) {
+                    out += code[i] === '\n' ? '\n' : ' ';
+                    i++;
+                }
+                if (i < n) { out += '   '; i += 3; }
+                continue;
+            }
+            if (ch === '"') {
+                out += ' '; i++;
+                while (i < n && code[i] !== '"') {
+                    if (code[i] === '\\' && i + 1 < n) {
+                        out += '  ';
+                        i += 2;
+                    } else {
+                        out += code[i] === '\n' ? '\n' : ' ';
+                        i++;
+                    }
+                }
+                if (i < n) { out += ' '; i++; }
+                continue;
+            }
+            if (ch === "'") {
+                out += ' '; i++;
+                while (i < n && code[i] !== "'") {
+                    if (code[i] === '\\' && i + 1 < n) {
+                        out += '  ';
+                        i += 2;
+                    } else {
+                        out += code[i] === '\n' ? '\n' : ' ';
+                        i++;
+                    }
+                }
+                if (i < n) { out += ' '; i++; }
+                continue;
+            }
+            out += ch;
+            i++;
+        }
+        return out;
+    }
+
+    function checkBrackets(clean) {
+        const errors = [];
+        const stack = [];
+        const pairs = { ')': '(', ']': '[', '}': '{' };
+        const openers = { '(': ')', '[': ']', '{': '}' };
+
+        let line = 1;
+        for (let i = 0; i < clean.length; i++) {
+            const c = clean[i];
+            if (c === '\n') { line++; continue; }
+            if (openers[c]) {
+                stack.push({ ch: c, line });
+            } else if (pairs[c]) {
+                const top = stack.pop();
+                if (!top) {
+                    errors.push('Строка ' + line + ': Лишняя закрывающая скобка "' + c + '"');
+                } else if (top.ch !== pairs[c]) {
+                    errors.push('Строка ' + line + ': Ожидалась "' + openers[top.ch] + '", а найдена "' + c + '" (открыта в строке ' + top.line + ')');
+                }
+            }
+        }
+        for (const s of stack) {
+            errors.push('Строка ' + s.line + ': Не закрыта скобка "' + s.ch + '"');
+        }
+        return errors;
+    }
+
+    function checkSemicolons(cleanLines, rawLines) {
+        const errors = [];
+
+        const skipStart = [
+            'if', 'else', 'for', 'while', 'do', 'switch', 'case', 'default',
+            'return', 'break', 'continue', 'throw', 'try', 'catch', 'finally',
+            'public', 'private', 'protected', 'static', 'final', 'abstract',
+            'class', 'interface', 'enum', 'record', 'extends', 'implements',
+            'import', 'package', 'new', 'instanceof', 'synchronized', 'volatile',
+            'transient', 'native', 'strictfp', 'assert', 'yield',
+            'void', 'int', 'long', 'short', 'byte', 'char', 'boolean', 'float', 'double'
+        ];
+
+        const contEnd = ['+', '-', '*', '/', '%', '=', '==', '!=', '<', '>', '<=', '>=',
+                         '&&', '||', '&', '|', '^', '!', '?', ':', ',', '.', '(', '[', '{',
+                         '->', '::'];
+
+        const contStart = ['.', '+', '-', '*', '/', '%', '=', '==', '!=', '<', '>',
+                           '<=', '>=', '&&', '||', '&', '|', '^', '?', ':', ',', ')', ']',
+                           '->', '::'];
+
+        for (let idx = 0; idx < cleanLines.length; idx++) {
+            const cleanLine = cleanLines[idx];
+            const rawLine = rawLines[idx];
+            const trimmed = cleanLine.trim();
+            const rawTrimmed = rawLine.trim();
+
+            if (trimmed === '') continue;
+            if (rawTrimmed.startsWith('//') || rawTrimmed.startsWith('/*') || rawTrimmed.startsWith('*')) continue;
+
+            if (/^[A-Za-z_$][\w$]*\s*:\s*$/.test(trimmed)) continue;
+            if (/^case\s+.+:\s*$/.test(trimmed)) continue;
+            if (/^default\s*:\s*$/.test(trimmed)) continue;
+
+            if (trimmed.endsWith('{') || trimmed.endsWith('}')) continue;
+            if (trimmed.endsWith(';')) continue;
+
+            const firstWord = trimmed.split(/[\s(]/)[0];
+            if (skipStart.includes(firstWord)) continue;
+
+            let startsWithCont = false;
+            for (const op of contStart) {
+                if (trimmed.startsWith(op)) { startsWithCont = true; break; }
+            }
+            if (startsWithCont) continue;
+
+            let prevNonEmpty = null;
+            for (let j = idx - 1; j >= 0; j--) {
+                if (cleanLines[j].trim() !== '') { prevNonEmpty = cleanLines[j].trim(); break; }
+            }
+            if (prevNonEmpty) {
+                let prevEndsCont = false;
+                for (const op of contEnd) {
+                    if (prevNonEmpty.endsWith(op)) { prevEndsCont = true; break; }
+                }
+                if (prevEndsCont) continue;
+            }
+
+            let nextNonEmpty = null;
+            for (let j = idx + 1; j < cleanLines.length; j++) {
+                if (cleanLines[j].trim() !== '') { nextNonEmpty = cleanLines[j].trim(); break; }
+            }
+            if (nextNonEmpty) {
+                let nextStartsCont = false;
+                for (const op of contStart) {
+                    if (nextNonEmpty.startsWith(op)) { nextStartsCont = true; break; }
+                }
+                if (nextStartsCont) continue;
+            }
+
+            if (trimmed.endsWith('(') || trimmed.endsWith(',')) continue;
+
+            errors.push('Строка ' + (idx + 1) + ': Возможно пропущена точка с запятой ;');
+        }
+        return errors;
+    }
+
+    document.getElementById('btnCheck').addEventListener('click', async function() {
+        const lang = document.getElementById('langSelector').value;
+
+        if (lang !== 'java') {
+            const proceed = await showConfirm(
+                'Для языка "' + (LANG_NAMES[lang] || lang) + '" полноценная проверка не поддерживается.\n' +
+                'Будет выполнен только грубый подсчёт баланса скобок — он может ошибаться.\n\n' +
+                'Продолжить?',
+                'Проверить',
+                'Отмена'
+            );
+            if (!proceed) return;
+
+            const code = editor.getValue();
+            const clean = stripStringsAndComments(code);
+            const errors = checkBrackets(clean);
+            const errorCountEl = document.getElementById('errorCount');
+
+            editor.clearGutter('CodeMirror-linenumbers');
+            for (let i = 0; i < editor.lineCount(); i++) {
+                editor.removeLineClass(i, 'background', 'cm-error-line');
+            }
+
+            if (errors.length === 0) {
+                errorCountEl.textContent = 'Ошибок: 0';
+                errorCountEl.className = 'error-count zero';
+                showToast('Баланс скобок в порядке', 'success');
+            } else {
+                errorCountEl.textContent = 'Ошибок: ' + errors.length;
+                errorCountEl.className = 'error-count';
+                errors.forEach((err, i) => setTimeout(() => showToast(err, 'error', 5000), i * 120));
+                for (const err of errors) {
+                    const m = err.match(/Строка (\d+)/);
+                    if (m) {
+                        const ln = parseInt(m[1], 10) - 1;
+                        if (ln >= 0 && ln < editor.lineCount()) {
+                            editor.addLineClass(ln, 'background', 'cm-error-line');
+                        }
+                    }
+                }
+                showToast('Найдено проблем: ' + errors.length, 'warning');
+            }
+            return;
+        }
+
+        const proceed = await showConfirm(
+            'Проверка может работать нестабильно и ошибаться. ' +
+            'Пожалуйста, проверяйте, правда ли есть ошибка, прежде чем что-то исправлять.\n\n' +
+            'Продолжить проверку?',
+            'Проверить',
+            'Отмена'
+        );
+        if (!proceed) return;
+
+        const code = editor.getValue();
+        const rawLines = code.split('\n');
+        const clean = stripStringsAndComments(code);
+        const cleanLines = clean.split('\n');
+
+        const errors = [];
+
+        errors.push(...checkBrackets(clean));
+        errors.push(...checkSemicolons(cleanLines, rawLines));
+
+        {
+            let i = 0;
+            const n = code.length;
+            let line = 1;
+            while (i < n) {
+                const c = code[i];
+                if (c === '\n') { line++; i++; continue; }
+                if (c === '/' && code[i + 1] === '/') {
+                    while (i < n && code[i] !== '\n') i++;
+                    continue;
+                }
+                if (c === '/' && code[i + 1] === '*') {
+                    i += 2;
+                    while (i < n && !(code[i] === '*' && code[i + 1] === '/')) {
+                        if (code[i] === '\n') line++;
+                        i++;
+                    }
+                    i += 2;
+                    continue;
+                }
+                if (c === '"' && code[i + 1] === '"' && code[i + 2] === '"') {
+                    i += 3;
+                    let closed = false;
+                    while (i < n) {
+                        if (code[i] === '"' && code[i + 1] === '"' && code[i + 2] === '"') {
+                            closed = true; i += 3; break;
+                        }
+                        if (code[i] === '\n') line++;
+                        i++;
+                    }
+                    if (!closed) errors.push('Строка ' + line + ': Text block """ не закрыт');
+                    continue;
+                }
+                if (c === '"') {
+                    const startLine = line;
+                    i++;
+                    let closed = false;
+                    while (i < n) {
+                        if (code[i] === '\\') { i += 2; continue; }
+                        if (code[i] === '"') { closed = true; i++; break; }
+                        if (code[i] === '\n') { break; }
+                        i++;
+                    }
+                    if (!closed) errors.push('Строка ' + startLine + ': Незакрытая строковая кавычка "');
+                    continue;
+                }
+                if (c === "'") {
+                    const startLine = line;
+                    i++;
+                    let closed = false;
+                    while (i < n) {
+                        if (code[i] === '\\') { i += 2; continue; }
+                        if (code[i] === "'") { closed = true; i++; break; }
+                        if (code[i] === '\n') { break; }
+                        i++;
+                    }
+                    if (!closed) errors.push('Строка ' + startLine + ': Незакрытый char-литерал \'');
+                    continue;
+                }
+                i++;
+            }
+        }
+
+        const errorCountEl = document.getElementById('errorCount');
+
+        editor.clearGutter('CodeMirror-linenumbers');
+        for (let i = 0; i < editor.lineCount(); i++) {
+            editor.removeLineClass(i, 'background', 'cm-error-line');
+        }
+
+        if (errors.length === 0) {
+            errorCountEl.textContent = 'Ошибок: 0';
+            errorCountEl.className = 'error-count zero';
+            showToast('Синтаксических ошибок не найдено', 'success');
+        } else {
+            errorCountEl.textContent = 'Ошибок: ' + errors.length;
+            errorCountEl.className = 'error-count';
+            errors.forEach((err, i) => setTimeout(() => showToast(err, 'error', 5000), i * 120));
+            showToast('Найдено проблем: ' + errors.length, 'warning');
+
+            const errorLines = new Set();
+            for (const err of errors) {
+                const m = err.match(/Строка (\d+)/);
+                if (m) errorLines.add(parseInt(m[1], 10) - 1);
+            }
+            for (const ln of errorLines) {
+                if (ln >= 0 && ln < editor.lineCount()) {
+                    editor.addLineClass(ln, 'background', 'cm-error-line');
+                }
+            }
+        }
+    });
+
+    editor.on('cursorActivity', function() {
+        const cursor = editor.getCursor();
+        document.getElementById('cursorPos').textContent =
+            'Строка ' + (cursor.line + 1) + ', Позиция ' + (cursor.ch + 1);
+        document.getElementById('charCount').textContent =
+            'Символов: ' + editor.getValue().length;
+    });
+
+    editor.on('change', function() {
+        if (currentFile && currentProject && getFileContent(currentFile) !== null) {
+            setFileContent(currentFile, editor.getValue());
+        }
+        saveProjects();
+    });
+
+    document.getElementById('fileName').addEventListener('change', function() {
+        let val = this.value.trim();
+        if (val && !val.includes('.')) {
+            const lang = document.getElementById('langSelector').value;
+            this.value = val + '.' + (LANG_EXTS[lang] || 'txt');
+        }
+        if (currentFile && currentProject && getFileContent(currentFile) !== null) {
+            const oldName = currentFile;
+            const newName = this.value;
+            if (oldName !== newName) {
+                if (getFileContent(newName) !== undefined) {
+                    showToast('Файл с таким именем уже существует', 'error');
+                    this.value = oldName;
+                    return;
+                }
+                const content = getFileContent(oldName);
+                setFileContent(newName, content);
+                deleteFile(oldName);
+                currentFile = newName;
+                const lang = getLangFromExtension(newName);
+                document.getElementById('langSelector').value = lang;
+                changeLanguage(lang);
+                renderFileList();
+                saveProjects();
+            }
+        }
+    });
+
+    loadProjects();
+    renderProjectList();
+    renderFileList();
+    updateProjectInfo();
+    loadSettings();
+
+    setTimeout(function() {
+        const cursor = editor.getCursor();
+        document.getElementById('cursorPos').textContent =
+            'Строка ' + (cursor.line + 1) + ', Позиция ' + (cursor.ch + 1);
+        document.getElementById('charCount').textContent =
+            'Символов: ' + editor.getValue().length;
+        const lang = document.getElementById('langSelector').value;
+        document.getElementById('langDisplay').textContent = LANG_NAMES[lang] || 'Текст';
+        document.getElementById('errorCount').textContent = 'Ошибок: 0';
+    }, 100);
+</script>
+
+</body>
+</html>
